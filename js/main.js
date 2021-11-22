@@ -21,32 +21,25 @@ require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/GeoJSONLa
     }    
   };
 
+  // // in this case the portalItem has to be a webmap
+  // let basemap = new Basemap({
+  //   portalItem: {
+  //     id: "8dda0e7b5e2d4fafa80132d59122268c"  // WGS84 Streets Vector webmap
+  //   }
+  // });
 
+  // or create the basemap from a well known ID
+  console.log(Basemap.fromId("arcgis-dark-gray"));
 
-
-// // in this case the portalItem has to be a webmap
-// let basemap = new Basemap({
-//   portalItem: {
-//     id: "8dda0e7b5e2d4fafa80132d59122268c"  // WGS84 Streets Vector webmap
-//   }
-// });
-
-// or create the basemap from a well known ID
-console.log(Basemap.fromId("arcgis-dark-gray"));
-
-// // or create from a third party source
-// let basemap = new Basemap({
-//   baseLayers: [
-//     new WebTileLayer(...)
-//   ],
-//   referenceLayers: [
-//     new WebTileLayer(...)
-//   ],
-// });
-
-
-
-
+  // // or create from a third party source
+  // let basemap = new Basemap({
+  //   baseLayers: [
+  //     new WebTileLayer(...)
+  //   ],
+  //   referenceLayers: [
+  //     new WebTileLayer(...)
+  //   ],
+  // });
 
   const geojsonLayer = new GeoJSONLayer({
     url: url,
@@ -61,9 +54,28 @@ console.log(Basemap.fromId("arcgis-dark-gray"));
   view = new MapView({
     map: map,
     center: [13.013, 42.026], // Longitude, latitude
-    zoom: 6, // Zoom level
+    zoom: 5, // Zoom level
     container: "viewDiv", // Div element
   });
 
   map.allLayers.forEach(layer => {console.log(layer.title)});
+
+  // Set up a click event handler and retrieve the screen x, y coordinates
+  view.on("click", function(event) {
+    // the hitTest() checks to see if any graphics in the view
+    // intersect the given screen x, y coordinates
+    view.hitTest(event)
+      .then(zoomAndCenter);
+  });
+
+  function zoomAndCenter(response) {
+    // the topmost graphic from the click location
+    // and display select attribute values from the
+    // graphic to the user
+    const graphic = response.results.find(element => element.graphic?.geometry !== null || undefined);
+    view.goTo({
+      center: graphic.graphic.geometry,
+      zoom: 15
+    });  // Sets the center point of the view at a specified lon/lat
+  }
 });
