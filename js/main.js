@@ -4,6 +4,8 @@ require(["esri/config", "esri/WebMap", "esri/layers/GeoJSONLayer","esri/views/Sc
     "AAPK458453f872f04d9883da057b3cf03fd9MtYiqYcCKy61WkYFI1ySlxP2u5WcoIkzfswoHiArIWHaDMyRWDgAX7Xa-pxhh7Zy";
 
   const url = "./cities.geojson";
+  const buttonBack = document.querySelector(".back");
+  let isZommed = false;
 
   const renderer = {
     type: "simple",
@@ -53,10 +55,14 @@ require(["esri/config", "esri/WebMap", "esri/layers/GeoJSONLayer","esri/views/Sc
 
   function zoomAndCenter(response) {
     const graphic = response.results.find(element => element.graphic?.geometry !== null || undefined);
-    view.goTo({
-      center: graphic.graphic.geometry,
-      zoom: 15
-    });
+    if (graphic) {
+      view.goTo({
+        center: graphic.graphic.geometry,
+        zoom: 15,
+        tilt: 70
+      });
+      isZommed = true;
+    } 
   }
 
   view.when(disableZooming);
@@ -91,7 +97,9 @@ require(["esri/config", "esri/WebMap", "esri/layers/GeoJSONLayer","esri/views/Sc
     view.on("double-click", ["Control"], stopEvtPropagation);
 
     // disables pinch-zoom and panning on the view
-    view.on("drag", stopEvtPropagation);
+    view.on("drag", (event) => {
+      if (!isZommed) stopEvtPropagation(event)
+    });
 
     // disable the view's zoom box to prevent the Shift + drag
     // and Shift + Control + drag zoom gestures.
@@ -119,4 +127,12 @@ require(["esri/config", "esri/WebMap", "esri/layers/GeoJSONLayer","esri/views/Sc
 
     return view;
   }
+
+  buttonBack.addEventListener('click', () => {
+    view.goTo({
+      center: [12.5538812361089167, 41.07347248726621],
+      zoom: 5.014714022182407,
+      tilt: 0
+    });
+  })
 });
