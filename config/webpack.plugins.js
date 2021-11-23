@@ -1,3 +1,4 @@
+/* eslint-disable import/no-extraneous-dependencies */
 const webpack = require('webpack');
 const cssnano = require('cssnano');
 const glob = require('glob');
@@ -13,6 +14,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const RobotstxtPlugin = require('robotstxt-webpack-plugin');
 const SitemapPlugin = require('sitemap-webpack-plugin').default;
+const CopyPlugin = require('copy-webpack-plugin');
 
 const config = require('./site.config');
 
@@ -105,7 +107,7 @@ const webpackBar = new WebpackBar({
 });
 
 // Google analytics
-const CODE = `<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','{{ID}}','auto');ga('send','pageview');</script>`;
+const CODE = "<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','{{ID}}','auto');ga('send','pageview');</script>";
 
 class GoogleAnalyticsPlugin {
   constructor({ id }) {
@@ -117,7 +119,10 @@ class GoogleAnalyticsPlugin {
       HTMLWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync(
         'GoogleAnalyticsPlugin',
         (data, cb) => {
-          data.html = data.html.replace('</head>', `${CODE.replace('{{ID}}', this.id) }</head>`);
+          data.html = data.html.replace(
+            '</head>',
+            `${CODE.replace('{{ID}}', this.id)}</head>`,
+          );
           cb(null, data);
         },
       );
@@ -127,6 +132,19 @@ class GoogleAnalyticsPlugin {
 
 const google = new GoogleAnalyticsPlugin({
   id: config.googleAnalyticsUA,
+});
+
+const copyAssets = new CopyPlugin({
+  patterns: [
+    {
+      from: path.join(config.root, config.paths.src, 'assets'),
+      to: path.join(config.root, config.paths.dist, 'assets'),
+    },
+  ],
+
+  options: {
+    concurrency: 100,
+  },
 });
 
 module.exports = [
@@ -141,4 +159,5 @@ module.exports = [
   config.googleAnalyticsUA && google,
   webpackBar,
   config.env === 'development' && hmr,
+  copyAssets,
 ].filter(Boolean);
