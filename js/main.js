@@ -311,7 +311,9 @@ require([
     // exlude the zoom widget from the default UI
     view.ui.components = ["attribution"];
     // disable mouse wheel scroll zooming on the view
-    view.on("mouse-wheel", stopEvtPropagation);
+    view.on("mouse-wheel", (event) => {
+      if (!isZommed) stopEvtPropagation(event);
+    });
     // disable zooming via double-click on the view
     view.on("double-click", stopEvtPropagation);
     // disable zooming out via double-click + Control on the view
