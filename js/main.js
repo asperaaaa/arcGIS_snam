@@ -1,15 +1,9 @@
-require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/GeoJSONLayer", "esri/Basemap","esri/views/SceneView"], function (
-  esriConfig,
-  Map,
-  MapView,
-  GeoJSONLayer,
-  Basemap,
-  SceneView
-) {
+require(["esri/config", "esri/WebMap", "esri/layers/GeoJSONLayer","esri/views/SceneView"], function (
+  esriConfig, WebMap, GeoJSONLayer, SceneView) {
   esriConfig.apiKey =
     "AAPK458453f872f04d9883da057b3cf03fd9MtYiqYcCKy61WkYFI1ySlxP2u5WcoIkzfswoHiArIWHaDMyRWDgAX7Xa-pxhh7Zy";
 
-  const url = './cities.geojson';
+  const url = "./cities.geojson";
 
   const renderer = {
     type: "simple",
@@ -17,39 +11,21 @@ require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/GeoJSONLa
       type: "simple-marker",
       color: "orange",
       outline: {
-        color: "white"
-      }
-    }    
+        color: "white",
+      },
+    },
   };
-
-  // // in this case the portalItem has to be a webmap
-  // let basemap = new Basemap({
-  //   portalItem: {
-  //     id: "8dda0e7b5e2d4fafa80132d59122268c"  // WGS84 Streets Vector webmap
-  //   }
-  // });
-
-  // or create the basemap from a well known ID
-  console.log(Basemap.fromId("arcgis-dark-gray"));
-
-  // // or create from a third party source
-  // let basemap = new Basemap({
-  //   baseLayers: [
-  //     new WebTileLayer(...)
-  //   ],
-  //   referenceLayers: [
-  //     new WebTileLayer(...)
-  //   ],
-  // });
 
   const geojsonLayer = new GeoJSONLayer({
     url: url,
-    renderer:renderer
+    renderer: renderer,
   });
 
-  const map = new Map({
-    basemap: "arcgis-dark-gray",
-    layers: [geojsonLayer]
+  const map = new WebMap({
+    portalItem: {
+      id: "c4d9f05ae3a7485a9dec68aa1c98cf64",
+    },
+    layers: [geojsonLayer],
   });
 
   // view = new MapView({
@@ -69,29 +45,22 @@ require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/GeoJSONLa
     }
   });
 
-  // map.allLayers.forEach(layer => {console.log(layer.title)});
-
   // Set up a click event handler and retrieve the screen x, y coordinates
   view.on("click", function(event) {
-    // the hitTest() checks to see if any graphics in the view
-    // intersect the given screen x, y coordinates
     view.hitTest(event)
       .then(zoomAndCenter);
   });
 
   function zoomAndCenter(response) {
-    // the topmost graphic from the click location
-    // and display select attribute values from the
-    // graphic to the user
     const graphic = response.results.find(element => element.graphic?.geometry !== null || undefined);
     view.goTo({
       center: graphic.graphic.geometry,
       zoom: 15
-    });  // Sets the center point of the view at a specified lon/lat
+    });
   }
 
   view.when(disableZooming);
-  
+
   /**
    * Disables all zoom gestures on the given view instance.
    *
