@@ -35,8 +35,21 @@ require([
 
   view = new MapView({
     map: map,
-    center: [13.013, 42.026],
-    zoom: 6,
-    container: "viewDiv",
+    center: [13.013, 42.026], // Longitude, latitude
+    zoom: 5, // Zoom level
+    container: "viewDiv", // Div element
   });
+
+  view.on("click", function(event) {
+    view.hitTest(event)
+      .then(zoomAndCenter);
+  });
+
+  function zoomAndCenter(response) {
+    const graphic = response.results.find(element => element.graphic?.geometry !== null || undefined);
+    view.goTo({
+      center: graphic.graphic.geometry,
+      zoom: 15
+    });
+  }
 });
