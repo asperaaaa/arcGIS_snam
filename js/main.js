@@ -5,20 +5,20 @@ require([
   "esri/views/SceneView",
   "esri/views/3d/externalRenderers",
   "esri/geometry/SpatialReference",
-  "esri/request",
 ], function (
   esriConfig,
   WebMap,
   GeoJSONLayer,
   SceneView,
   externalRenderers,
-  SpatialReference,
-  esriRequest
+  SpatialReference
 ) {
   esriConfig.apiKey =
     "AAPK458453f872f04d9883da057b3cf03fd9MtYiqYcCKy61WkYFI1ySlxP2u5WcoIkzfswoHiArIWHaDMyRWDgAX7Xa-pxhh7Zy";
 
   const url = "./cities.geojson";
+  const buttonBack = document.querySelector(".back");
+  let isZommed = false;
 
   const renderer = {
     type: "simple",
@@ -63,10 +63,16 @@ require([
     const graphic = response.results.find(
       (element) => element.graphic?.geometry !== null || undefined
     );
-    view.goTo({
-      center: graphic.graphic.geometry,
-      zoom: 15,
-    });
+
+    if (graphic) {
+      view.goTo({
+        center: graphic.graphic.geometry,
+        zoom: 15,
+        tilt: 70,
+      });
+
+      isZommed = true;
+    }
   }
 
   var issExternalRenderer = {
@@ -201,7 +207,7 @@ require([
       // update ISS and region position
       ///////////////////////////////////////////////////////////////////////////////////
       if (this.iss) {
-        var posEst = [12.5538812361089167, 41.07347248726621,1000];
+        var posEst = [12.5538812361089167, 41.07347248726621, 1000];
 
         var renderPos = [0, 0, 0];
         externalRenderers.toRenderCoordinates(
@@ -280,9 +286,70 @@ require([
     },
 
     lastPosition: null,
-    lastTime: null,   
+    lastTime: null,
   };
 
   // register the external renderer
   externalRenderers.add(view, issExternalRenderer);
+
+  view.when(disableZooming);
+
+  /**
+   * Disables all zoom gestures on the given view instance.
+   *
+   * @param {esri/views/MapView} view - The MapView instance on which to
+   *                                  disable zooming gestures.
+   */
+  function disableZooming(view) {
+    view.popup.dockEnabled = true;
+    // Removes the zoom action on the popup
+    view.popup.actions = [];
+    // stops propagation of default behavior when an event fires
+    function stopEvtPropagation(event) {
+      event.stopPropagation();
+    }
+    // exlude the zoom widget from the default UI
+    view.ui.components = ["attribution"];
+    // disable mouse wheel scroll zooming on the view
+    view.on("mouse-wheel", stopEvtPropagation);
+    // disable zooming via double-click on the view
+    view.on("double-click", stopEvtPropagation);
+    // disable zooming out via double-click + Control on the view
+    view.on("double-click", ["Control"], stopEvtPropagation);
+    // disables pinch-zoom and panning on the view
+    view.on("drag", (event) => {
+      if (!isZommed) stopEvtPropagation(event);
+    });
+    // disable the view's zoom box to prevent the Shift + drag
+    // and Shift + Control + drag zoom gestures.
+    view.on("drag", ["Shift"], stopEvtPropagation);
+    view.on("drag", ["Shift", "Control"], stopEvtPropagation);
+    // prevents zooming with the + and - keys
+    view.on("key-down", (event) => {
+      const prohibitedKeys = [
+        "+",
+        "-",
+        "Shift",
+        "_",
+        "=",
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowRight",
+        "ArrowLeft",
+      ];
+      const keyPressed = event.key;
+      if (prohibitedKeys.indexOf(keyPressed) !== -1) {
+        event.stopPropagation();
+      }
+    });
+    return view;
+  }
+
+  buttonBack.addEventListener("click", () => {
+    view.goTo({
+      center: [12.5538812361089167, 41.07347248726621],
+      zoom: 6,
+      tilt: 0,
+    });
+  });
 });
