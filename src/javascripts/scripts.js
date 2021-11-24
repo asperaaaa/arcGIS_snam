@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 /* eslint-disable max-len */
 /* eslint-disable no-param-reassign */
 import esriConfig from '@arcgis/core/config';
@@ -11,6 +12,7 @@ import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 import * as THREE from 'three';
 // import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { IFCLoader } from 'three/examples/jsm/loaders/IFCLoader';
+// import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 
 esriConfig.apiKey = 'AAPK458453f872f04d9883da057b3cf03fd9MtYiqYcCKy61WkYFI1ySlxP2u5WcoIkzfswoHiArIWHaDMyRWDgAX7Xa-pxhh7Zy';
 
@@ -18,7 +20,8 @@ const url = './assets/cities.geojson';
 const buttonBack = document.querySelector('.back');
 let isZommed = false;
 // const mesh = './assets/models/iss.obj';
-const mesh = './assets/models/snam.ifc';
+// const mesh = './assets/models/snam.ifc';
+const mesh = './assets/models/test.ifc';
 
 const renderer = {
   type: 'simple',
@@ -226,7 +229,6 @@ const issExternalRenderer = {
     const ifcLoader = new IFCLoader();
     ifcLoader.ifcManager.setWasmPath('./assets/ifc/');
     ifcLoader.load(mesh, (object3d) => {
-      console.log(object3d);
       this.iss = object3d.mesh;
       // // set the specified scale for the model
       // this.iss.scale.set(this.issScale, this.issScale, this.issScale);
@@ -249,18 +251,23 @@ const issExternalRenderer = {
     // update ISS and region position
     // /////////////////////////////////////////////////////////////////////////////////
     if (this.iss) {
-      let posEst = [9.1900634765625, 45.468799075209894, 200];
+      const posEst = [9.1900634765625, 45.468799075209894, 200];
 
       const renderPos = [0, 0, 0];
       externalRenderers.toRenderCoordinates(view, posEst, 0, SpatialReference.WGS84, renderPos, 0, 1);
-      this.iss.position.set(renderPos[0], renderPos[1], renderPos[2]);
-
-      // for the region, we position a torus slightly under ground
-      // the torus also needs to be rotated to lie flat on the ground
-      posEst = [posEst[0], posEst[1], -450 * 1000];
+      // this.iss.position.set(renderPos[0], renderPos[1], renderPos[2]);
 
       const transform = new THREE.Matrix4();
       transform.fromArray(externalRenderers.renderCoordinateTransformAt(view, posEst, SpatialReference.WGS84, new Array(16)));
+      transform.decompose(this.iss.position, this.iss.quaternion, this.iss.scale);
+
+      const issAxis = new THREE.AxesHelper(200);
+      this.iss.add(issAxis);
+
+    //   const control = new TransformControls(currentCamera, renderer.domElement);
+    //     control.addEventListener('change', this.render);
+    //     control.attach(this.iss);
+    //     this.scene.add(control);
     }
 
     // draw the scene
