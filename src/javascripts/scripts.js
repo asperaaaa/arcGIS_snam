@@ -12,7 +12,6 @@ import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 import * as THREE from 'three';
 // import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { IFCLoader } from 'three/examples/jsm/loaders/IFCLoader';
-// import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 
 esriConfig.apiKey = 'AAPK458453f872f04d9883da057b3cf03fd9MtYiqYcCKy61WkYFI1ySlxP2u5WcoIkzfswoHiArIWHaDMyRWDgAX7Xa-pxhh7Zy';
 
@@ -47,7 +46,7 @@ const map = new WebMap({
   layers: [geojsonLayer],
 });
 
-const view = new SceneView({
+window.view = new SceneView({
   container: 'viewDiv',
   map,
   scale: 9140598.13105315,
@@ -62,10 +61,11 @@ function zoomAndCenter(response) {
   const graphic = response.results.find((element) => element.graphic.geometry !== null || undefined);
 
   if (graphic) {
-    view.goTo({
-      center: graphic.graphic.geometry,
-      zoom: 15,
-      tilt: 70,
+    window.view.goTo({
+      center: [9.190202326269551, 45.468707042649875],
+      zoom: 20.2748821752357,
+      tilt: 81.19179604099016,
+      heading: 339.1158688251369,
     });
 
     isZommed = true;
@@ -73,8 +73,8 @@ function zoomAndCenter(response) {
 }
 
 // Set up a click event handler and retrieve the screen x, y coordinates
-view.on('click', (event) => {
-  view.hitTest(event).then(zoomAndCenter);
+window.view.on('click', (event) => {
+  window.view.hitTest(event).then(zoomAndCenter);
 });
 
 /**
@@ -130,11 +130,11 @@ function disableZooming(_view) {
   return _view;
 }
 
-view.when(disableZooming);
+window.view.when(disableZooming);
 
 buttonBack.addEventListener('click', () => {
   isZommed = false;
-  view.goTo({
+  window.view.goTo({
     center: [12.5538812361089167, 41.07347248726621],
     zoom: 6,
     tilt: 0,
@@ -145,7 +145,7 @@ buttonBack.addEventListener('click', () => {
 // ////////////////////////////////////////////
 // Disable lighting based on the current camera position.
 // We want to display the lighting according to the current time of day.
-view.environment.lighting.cameraTrackingEnabled = false;
+window.view.environment.lighting.cameraTrackingEnabled = false;
 
 // Create our custom external renderer
 // ////////////////////////////////////////////////////////////////////////////////////
@@ -173,7 +173,7 @@ const issExternalRenderer = {
       premultipliedAlpha: false,
     });
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setViewport(0, 0, view.width, view.height);
+    this.renderer.setViewport(0, 0, window.view.width, window.view.height);
 
     // prevent three.js from clearing the buffers provided by the ArcGIS JS API.
     this.renderer.autoClearDepth = false;
@@ -201,39 +201,23 @@ const issExternalRenderer = {
     this.sun = new THREE.DirectionalLight(0xffffff, 0.5);
     this.scene.add(this.sun);
 
-    // // load ISS mesh
-    // const loader = new OBJLoader(THREE.DefaultLoadingManager);
-    // // eslint-disable-next-line prefer-arrow-callback
-    // loader.load(mesh, function (object3d) {
-    //   console.log('ISS mesh loaded.');
-    //   this.iss = object3d;
-
-    //   // apply ISS material to all nodes in the geometry
-    //   // eslint-disable-next-line prefer-arrow-callback
-    //   this.iss.traverse(function (child) {
-    //     if (child instanceof THREE.Mesh) {
-    //       child.material = this.issMaterial;
-    //     }
-    //   }.bind(this));
-
-    //   // set the specified scale for the model
-    //   this.iss.scale.set(this.issScale, this.issScale, this.issScale);
-
-    //   // add the model
-    //   this.scene.add(this.iss);
-    // }.bind(this), undefined, (error) => {
-    //   console.error('Error loading ISS mesh. ', error);
-    // });
+    const onProgress = (xhr) => {
+      if (xhr.lengthComputable) {
+        const percentComplete = (xhr.loaded / xhr.total) * 100;
+        console.log(`model ${Math.round(percentComplete, 2)}% downloaded`);
+      }
+    };
 
     // Setup IFC Loader
     const ifcLoader = new IFCLoader();
     ifcLoader.ifcManager.setWasmPath('./assets/ifc/');
     ifcLoader.load(mesh, (object3d) => {
-      this.iss = object3d.mesh;
+      this.iss = object3d;
+      console.log(object3d);
       // // set the specified scale for the model
-      // this.iss.scale.set(this.issScale, this.issScale, this.issScale);
+      this.iss.scale.set(this.issScale, this.issScale, this.issScale);
       this.scene.add(this.iss);
-    });
+    }, onProgress);
   },
 
   render(context) {
@@ -251,23 +235,23 @@ const issExternalRenderer = {
     // update ISS and region position
     // /////////////////////////////////////////////////////////////////////////////////
     if (this.iss) {
-      const posEst = [9.1900634765625, 45.468799075209894, 200];
+      const posEst = [9.1900634765625, 45.468799075209894, 125];
 
       const renderPos = [0, 0, 0];
-      externalRenderers.toRenderCoordinates(view, posEst, 0, SpatialReference.WGS84, renderPos, 0, 1);
-      // this.iss.position.set(renderPos[0], renderPos[1], renderPos[2]);
+      externalRenderers.toRenderCoordinates(window.view, posEst, 0, SpatialReference.WGS84, renderPos, 0, 1);
+      this.iss.position.set(renderPos[0], renderPos[1], renderPos[2]);
 
       const transform = new THREE.Matrix4();
-      transform.fromArray(externalRenderers.renderCoordinateTransformAt(view, posEst, SpatialReference.WGS84, new Array(16)));
+      transform.fromArray(externalRenderers.renderCoordinateTransformAt(window.view, posEst, SpatialReference.WGS84, new Array(16)));
       transform.decompose(this.iss.position, this.iss.quaternion, this.iss.scale);
+
+      const xAxis = new THREE.Vector3(1, 0, 0);
+      const yAxis = new THREE.Vector3(0, 1, 0);
+      this.iss.rotateOnAxis(xAxis, Math.PI / 2);
+      this.iss.rotateOnAxis(yAxis, -Math.PI / 2);
 
       const issAxis = new THREE.AxesHelper(200);
       this.iss.add(issAxis);
-
-    //   const control = new TransformControls(currentCamera, renderer.domElement);
-    //     control.addEventListener('change', this.render);
-    //     control.attach(this.iss);
-    //     this.scene.add(control);
     }
 
     // draw the scene
@@ -278,4 +262,4 @@ const issExternalRenderer = {
 };
 
 // register the external renderer
-externalRenderers.add(view, issExternalRenderer);
+externalRenderers.add(window.view, issExternalRenderer);
