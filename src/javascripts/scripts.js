@@ -1,10 +1,10 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable max-len */
 /* eslint-disable no-param-reassign */
 import esriConfig from '@arcgis/core/config';
 import WebMap from '@arcgis/core/WebMap';
 import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
 import SceneView from '@arcgis/core/views/SceneView';
-import esriRequest from '@arcgis/core/request';
 
 import * as externalRenderers from '@arcgis/core/views/3d/externalRenderers';
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
@@ -52,16 +52,16 @@ const view = new SceneView({
     rotationEnabled: false,
   },
   viewingMode: 'global',
-  camera: {
-    position: {
-      x: -9932671,
-      y: 2380007,
-      z: 1687219,
-      spatialReference: { wkid: 102100 },
-    },
-    heading: 0,
-    tilt: 35,
-  },
+//   camera: {
+//     position: {
+//       x: 12,
+//       y: 41,
+//       z: 1700000,
+//       spatialReference: { wkid: 102100 },
+//     },
+//     heading: 0,
+//     tilt: 0,
+//   },
 });
 
 function zoomAndCenter(response) {
@@ -136,7 +136,7 @@ function disableZooming(_view) {
   return _view;
 }
 
-view.when(disableZooming);
+// view.when(disableZooming);
 
 buttonBack.addEventListener('click', () => {
   isZommed = false;
@@ -165,14 +165,8 @@ const issExternalRenderer = {
   sun: null, // three.js sun light source
 
   iss: null, // ISS model
-  issScale: 400000, // scale for the iss model
+  issScale: 200, // scale for the iss model
   issMaterial: new THREE.MeshLambertMaterial({ color: 0xe03110 }), // material for the ISS model
-
-  cameraPositionInitialized: false, // we focus the view on the ISS once we receive our first data point
-  positionHistory: [], // all ISS positions received so far
-
-  markerMaterial: null, // material for the markers left by the ISS
-  markerGeometry: null, // geometry for the markers left by the ISS
 
   /**
    * Setup function, called once by the ArcGIS JS API.
@@ -205,21 +199,13 @@ const issExternalRenderer = {
 
     // setup the three.js scene
     // /////////////////////////////////////////////////////////////////////////////////////
-
     this.scene = new THREE.Scene();
-
-    // setup the camera
     this.camera = new THREE.PerspectiveCamera();
 
-    // setup scene lighting
     this.ambient = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(this.ambient);
     this.sun = new THREE.DirectionalLight(0xffffff, 0.5);
     this.scene.add(this.sun);
-
-    // setup markers
-    this.markerGeometry = new THREE.SphereBufferGeometry(12 * 1000, 16, 16);
-    this.markerMaterial = new THREE.MeshBasicMaterial({ color: 0xe03110, transparent: true, opacity: 0.75 });
 
     // // load ISS mesh
     // const issMeshUrl = 'data/iss.obj';
@@ -245,22 +231,6 @@ const issExternalRenderer = {
     }.bind(this), undefined, (error) => {
       console.error('Error loading ISS mesh. ', error);
     });
-
-    // create the horizon model
-    const mat = new THREE.MeshBasicMaterial({ color: 0x2194ce });
-    mat.transparent = true;
-    mat.opacity = 0.5;
-    this.region = new THREE.Mesh(
-      new THREE.TorusBufferGeometry(2294 * 1000, 100 * 1000, 16, 64),
-      mat,
-    );
-    this.scene.add(this.region);
-
-    // start querying the ISS position
-    this.queryISSPosition();
-
-    // cleanup after ourselfs
-    context.resetWebGLState();
   },
 
   render(context) {
@@ -278,7 +248,7 @@ const issExternalRenderer = {
     // update ISS and region position
     // /////////////////////////////////////////////////////////////////////////////////
     if (this.iss) {
-      let posEst = this.computeISSPosition();
+      let posEst = [9.1900634765625, 45.468799075209894, 200];
 
       const renderPos = [0, 0, 0];
       externalRenderers.toRenderCoordinates(view, posEst, 0, SpatialReference.WGS84, renderPos, 0, 1);
@@ -290,147 +260,13 @@ const issExternalRenderer = {
 
       const transform = new THREE.Matrix4();
       transform.fromArray(externalRenderers.renderCoordinateTransformAt(view, posEst, SpatialReference.WGS84, new Array(16)));
-      transform.decompose(this.region.position, this.region.quaternion, this.region.scale);
-
-      // if we haven't initialized the view position yet, we do so now
-      if (this.positionHistory.length > 0 && !this.cameraPositionInitialized) {
-        this.cameraPositionInitialized = true;
-        view.goTo({
-          target: [posEst[0], posEst[1]],
-          zoom: 5,
-        });
-      }
-      console.log(this.positionHistory.length);
     }
-
-    // update lighting
-    /// //////////////////////////////////////////////////////////////////////////////////////////////////
-    view.environment.lighting.date = Date.now();
-
-    const l = context.sunLight;
-    this.sun.position.set(
-      l.direction[0],
-      l.direction[1],
-      l.direction[2],
-    );
-    this.sun.intensity = l.diffuse.intensity;
-    this.sun.color = new THREE.Color(l.diffuse.color[0], l.diffuse.color[1], l.diffuse.color[2]);
-
-    this.ambient.intensity = l.ambient.intensity;
-    this.ambient.color = new THREE.Color(l.ambient.color[0], l.ambient.color[1], l.ambient.color[2]);
 
     // draw the scene
     /// //////////////////////////////////////////////////////////////////////////////////////////////////
     // this.renderer.resetGLState();
     this.renderer.render(this.scene, this.camera);
     this.renderer.state.reset();
-
-    // as we want to smoothly animate the ISS movement, immediately request a re-render
-    externalRenderers.requestRender(view);
-
-    // cleanup
-    context.resetWebGLState();
-  },
-
-  lastPosition: null,
-  lastTime: null,
-
-  /**
-   * Computes an estimate for the position of the ISS based on the current time.
-   */
-  computeISSPosition() {
-    if (this.positionHistory.length === 0) { return [0, 0, 0]; }
-
-    if (this.positionHistory.length === 1) {
-      const entry1 = this.positionHistory[this.positionHistory.length - 1];
-      return entry1.pos;
-    }
-
-    const now = Date.now() / 1000;
-    const entry1 = this.positionHistory[this.positionHistory.length - 1];
-
-    // initialize the remembered ISS position
-    if (!this.lastPosition) {
-      this.lastPosition = entry1.pos;
-      this.lastTime = entry1.time;
-    }
-
-    // compute a new estimated position
-    const dt1 = now - entry1.time;
-    const est1 = [
-      entry1.pos[0] + dt1 * entry1.vel[0],
-      entry1.pos[1] + dt1 * entry1.vel[1],
-    ];
-
-    // compute the delta of current and newly estimated position
-    const dPos = [
-      est1[0] - this.lastPosition[0],
-      est1[1] - this.lastPosition[1],
-    ];
-
-    // compute required velocity to reach newly estimated position
-    // but cap the actual velocity to 1.2 times the currently estimated ISS velocity
-    let dt = now - this.lastTime;
-    if (dt === 0) { dt = 1.0 / 1000; }
-
-    const catchupVel = Math.sqrt(dPos[0] * dPos[0] + dPos[1] * dPos[1]) / dt;
-    const maxVel = 1.2 * Math.sqrt(entry1.vel[0] * entry1.vel[0] + entry1.vel[1] * entry1.vel[1]);
-    const factor = catchupVel <= maxVel ? 1.0 : maxVel / catchupVel;
-
-    // move the current position towards the estimated position
-    const newPos = [
-      this.lastPosition[0] + dPos[0] * factor,
-      this.lastPosition[1] + dPos[1] * factor,
-      entry1.pos[2],
-    ];
-
-    this.lastPosition = newPos;
-    this.lastTime = now;
-
-    return newPos;
-  },
-
-  /**
-   * This function starts a chain of calls querying the current ISS position from open-notify.org every 5 seconds.
-   */
-  queryISSPosition() {
-    esriRequest('//open-notify-api.herokuapp.com/iss-now.json', {
-      callbackParamName: 'callback',
-      responseType: 'json',
-    })
-      // eslint-disable-next-line prefer-arrow-callback
-      .then(function (response) {
-        const result = response.data;
-
-        let vel = [0, 0];
-        if (this.positionHistory.length > 0) {
-          const last = this.positionHistory[this.positionHistory.length - 1];
-          const deltaT = result.timestamp - last.time;
-          const vLon = (result.iss_position.longitude - last.pos[0]) / deltaT;
-          const vLat = (result.iss_position.latitude - last.pos[1]) / deltaT;
-          vel = [vLon, vLat];
-        }
-
-        this.positionHistory.push({
-          pos: [result.iss_position.longitude, result.iss_position.latitude, 400 * 1000],
-          time: result.timestamp,
-          vel,
-        });
-
-        // create a new marker object from the second most recent position update
-        if (this.positionHistory.length >= 2) {
-          const entry = this.positionHistory[this.positionHistory.length - 2];
-
-          const renderPos = [0, 0, 0];
-          externalRenderers.toRenderCoordinates(view, entry.pos, 0, SpatialReference.WGS84, renderPos, 0, 1);
-
-          const markerObject = new THREE.Mesh(this.markerGeometry, this.markerMaterial);
-          markerObject.position.set(renderPos[0], renderPos[1], renderPos[2]);
-          this.scene.add(markerObject);
-        }
-      }.bind(this));
-
-    setTimeout(this.queryISSPosition.bind(this), 5000);
   },
 };
 
