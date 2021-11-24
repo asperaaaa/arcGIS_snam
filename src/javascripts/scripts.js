@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable max-len */
 /* eslint-disable no-param-reassign */
 import esriConfig from '@arcgis/core/config';
@@ -52,16 +51,6 @@ const view = new SceneView({
     rotationEnabled: false,
   },
   viewingMode: 'global',
-//   camera: {
-//     position: {
-//       x: 12,
-//       y: 41,
-//       z: 1700000,
-//       spatialReference: { wkid: 102100 },
-//     },
-//     heading: 0,
-//     tilt: 0,
-//   },
 });
 
 function zoomAndCenter(response) {
@@ -136,7 +125,7 @@ function disableZooming(_view) {
   return _view;
 }
 
-// view.when(disableZooming);
+view.when(disableZooming);
 
 buttonBack.addEventListener('click', () => {
   isZommed = false;
@@ -264,7 +253,6 @@ const issExternalRenderer = {
 
     // draw the scene
     /// //////////////////////////////////////////////////////////////////////////////////////////////////
-    // this.renderer.resetGLState();
     this.renderer.render(this.scene, this.camera);
     this.renderer.state.reset();
   },
