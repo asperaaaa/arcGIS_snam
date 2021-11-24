@@ -9,14 +9,16 @@ import * as externalRenderers from '@arcgis/core/views/3d/externalRenderers';
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+// import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { IFCLoader } from 'three/examples/jsm/loaders/IFCLoader';
 
 esriConfig.apiKey = 'AAPK458453f872f04d9883da057b3cf03fd9MtYiqYcCKy61WkYFI1ySlxP2u5WcoIkzfswoHiArIWHaDMyRWDgAX7Xa-pxhh7Zy';
 
 const url = './assets/cities.geojson';
 const buttonBack = document.querySelector('.back');
 let isZommed = false;
-const issMeshUrl = './assets/models/iss.obj';
+// const mesh = './assets/models/iss.obj';
+const mesh = './assets/models/snam.ifc';
 
 const renderer = {
   type: 'simple',
@@ -197,28 +199,38 @@ const issExternalRenderer = {
     this.scene.add(this.sun);
 
     // // load ISS mesh
-    // const issMeshUrl = 'data/iss.obj';
-    const loader = new OBJLoader(THREE.DefaultLoadingManager);
-    // eslint-disable-next-line prefer-arrow-callback
-    loader.load(issMeshUrl, function (object3d) {
-      console.log('ISS mesh loaded.');
-      this.iss = object3d;
+    // const loader = new OBJLoader(THREE.DefaultLoadingManager);
+    // // eslint-disable-next-line prefer-arrow-callback
+    // loader.load(mesh, function (object3d) {
+    //   console.log('ISS mesh loaded.');
+    //   this.iss = object3d;
 
-      // apply ISS material to all nodes in the geometry
-      // eslint-disable-next-line prefer-arrow-callback
-      this.iss.traverse(function (child) {
-        if (child instanceof THREE.Mesh) {
-          child.material = this.issMaterial;
-        }
-      }.bind(this));
+    //   // apply ISS material to all nodes in the geometry
+    //   // eslint-disable-next-line prefer-arrow-callback
+    //   this.iss.traverse(function (child) {
+    //     if (child instanceof THREE.Mesh) {
+    //       child.material = this.issMaterial;
+    //     }
+    //   }.bind(this));
 
-      // set the specified scale for the model
-      this.iss.scale.set(this.issScale, this.issScale, this.issScale);
+    //   // set the specified scale for the model
+    //   this.iss.scale.set(this.issScale, this.issScale, this.issScale);
 
-      // add the model
+    //   // add the model
+    //   this.scene.add(this.iss);
+    // }.bind(this), undefined, (error) => {
+    //   console.error('Error loading ISS mesh. ', error);
+    // });
+
+    // Setup IFC Loader
+    const ifcLoader = new IFCLoader();
+    ifcLoader.ifcManager.setWasmPath('./assets/ifc/');
+    ifcLoader.load(mesh, (object3d) => {
+      console.log(object3d);
+      this.iss = object3d.mesh;
+      // // set the specified scale for the model
+      // this.iss.scale.set(this.issScale, this.issScale, this.issScale);
       this.scene.add(this.iss);
-    }.bind(this), undefined, (error) => {
-      console.error('Error loading ISS mesh. ', error);
     });
   },
 
