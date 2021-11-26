@@ -7,11 +7,13 @@ import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
 import SceneView from '@arcgis/core/views/SceneView';
 
 import * as externalRenderers from '@arcgis/core/views/3d/externalRenderers';
+// eslint-disable-next-line no-unused-vars
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 
 import * as THREE from 'three';
 // import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { IFCLoader } from 'three/examples/jsm/loaders/IFCLoader';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 esriConfig.apiKey = 'AAPK458453f872f04d9883da057b3cf03fd9MtYiqYcCKy61WkYFI1ySlxP2u5WcoIkzfswoHiArIWHaDMyRWDgAX7Xa-pxhh7Zy';
 
@@ -20,7 +22,12 @@ const buttonBack = document.querySelector('.back');
 let isZommed = false;
 // const mesh = './assets/models/iss.obj';
 // const mesh = './assets/models/snam.ifc';
-const mesh = './assets/models/test.ifc';
+// const mesh = './assets/models/test.ifc';
+const meshs = ['./assets/models/source/SNM_POC_CON_V04.ifc', './assets/models/source/SNM_POC_PIL1_V03.ifc', './assets/models/source/SNM_POC_PIL2_V01.ifc'];
+// const meshs = ['./assets/models/source/SNM_POC_PIL2_V02-All_Building_Proxy_02.ifc', './assets/models/source/SNM_POC_PIL2_V02-All_Building_Proxy.ifc', './assets/models/source/SNM_POC_PIL2_V02-categorie_differenziate.ifc'];
+// const meshs = ['./assets/models/source/SNM_POC_PIL2_V02.ifc', './assets/models/source/SNM_POC_PIL2_V03.ifc', './assets/models/source/SNM_POC_PIL3_V03.ifc'];
+// const meshs = ['./assets/models/source/SNM_POC_PIL2_V02.ifc', './assets/models/source/SNM_POC_PIL2_V03.ifc', './assets/models/source/SNM_POC_ReMiCusago_V03.ifc'];
+// const meshs = ['./assets/models/snam.ifc', './assets/models/source/SNM_POC_PIL2_V03.ifc', './assets/models/source/SNM_POC_ReMiCusago_V03.ifc'];
 
 const renderer = {
   type: 'simple',
@@ -62,10 +69,10 @@ function zoomAndCenter(response) {
 
   if (graphic) {
     window.view.goTo({
-      center: [9.190202326269551, 45.468707042649875],
-      zoom: 20.2748821752357,
-      tilt: 81.19179604099016,
-      heading: 339.1158688251369,
+      center: graphic.graphic.geometry,
+      zoom: 18.663527207725117,
+      tilt: 76.83284190562944,
+      heading: 339.748585095395,
     });
 
     isZommed = true;
@@ -160,7 +167,9 @@ const issExternalRenderer = {
 
   iss: null, // ISS model
   issScale: 200, // scale for the iss model
-  issMaterial: new THREE.MeshLambertMaterial({ color: 0xe03110 }), // material for the ISS model
+  issMaterial: new THREE.MeshLambertMaterial({ color: 0x707070 }), // material for the ISS model
+
+  meshs: [],
 
   /**
    * Setup function, called once by the ArcGIS JS API.
@@ -211,13 +220,40 @@ const issExternalRenderer = {
     // Setup IFC Loader
     const ifcLoader = new IFCLoader();
     ifcLoader.ifcManager.setWasmPath('./assets/ifc/');
-    ifcLoader.load(mesh, (object3d) => {
-      this.iss = object3d;
-      console.log(object3d);
-      // // set the specified scale for the model
-      this.iss.scale.set(this.issScale, this.issScale, this.issScale);
-      this.scene.add(this.iss);
-    }, onProgress);
+    // ifcLoader.load(mesh, (object3d) => {
+    //   this.iss = object3d;
+    //   console.log(object3d);
+    //   // // set the specified scale for the model
+    //   this.iss.scale.set(this.issScale, this.issScale, this.issScale);
+    //   // this.scene.add(this.iss);
+    // }, onProgress);
+
+    // const loader = new GLTFLoader(THREE.DefaultLoadingManager);
+    meshs.forEach((_url, index) => {
+      // loader.load(_url, (gltf) => {
+      //   console.log('mesh >>>>>>>>>>>>>>', gltf);
+      //   gltf.scene.scale.set(this.issScale, this.issScale, this.issScale);
+      //   // gltf.scene.traverse((child) => {
+      //   //   if (child.isMesh) {
+      //   //     child.material = this.issMaterial;
+      //   //   }
+      //   // });
+      //   this.meshs.push(gltf.scene);
+      //   this.scene.add(gltf.scene);
+        ifcLoader.load(_url, (object3d) => {
+          console.log('mesh >>>>>>>>>>>>>>', index, object3d);
+          object3d.scale.set(this.issScale, this.issScale, this.issScale);
+      //   // gltf.scene.traverse((child) => {
+      //   //   if (child.isMesh) {
+      //   //     child.material = this.issMaterial;
+      //   //   }
+      //   // });
+          this.meshs.push(object3d);
+          this.scene.add(object3d);
+      }, onProgress, (error) => {
+        console.error(error);
+      });
+    });
   },
 
   render(context) {
@@ -234,24 +270,52 @@ const issExternalRenderer = {
 
     // update ISS and region position
     // /////////////////////////////////////////////////////////////////////////////////
-    if (this.iss) {
-      const posEst = [9.1900634765625, 45.468799075209894, 125];
+    // if (this.iss) {
+    //   const posEst = [9.1900634765625, 45.468799075209894, 125];
 
-      const renderPos = [0, 0, 0];
-      externalRenderers.toRenderCoordinates(window.view, posEst, 0, SpatialReference.WGS84, renderPos, 0, 1);
-      this.iss.position.set(renderPos[0], renderPos[1], renderPos[2]);
+    //   const renderPos = [0, 0, 0];
+    //   externalRenderers.toRenderCoordinates(window.view, posEst, 0, SpatialReference.WGS84, renderPos, 0, 1);
+    //   this.iss.position.set(renderPos[0], renderPos[1], renderPos[2]);
 
-      const transform = new THREE.Matrix4();
-      transform.fromArray(externalRenderers.renderCoordinateTransformAt(window.view, posEst, SpatialReference.WGS84, new Array(16)));
-      transform.decompose(this.iss.position, this.iss.quaternion, this.iss.scale);
+    //   const transform = new THREE.Matrix4();
+    //   transform.fromArray(externalRenderers.renderCoordinateTransformAt(window.view, posEst, SpatialReference.WGS84, new Array(16)));
+    //   transform.decompose(this.iss.position, this.iss.quaternion, this.iss.scale);
 
-      const xAxis = new THREE.Vector3(1, 0, 0);
-      const yAxis = new THREE.Vector3(0, 1, 0);
-      this.iss.rotateOnAxis(xAxis, Math.PI / 2);
-      this.iss.rotateOnAxis(yAxis, -Math.PI / 2);
+    //   const xAxis = new THREE.Vector3(1, 0, 0);
+    //   const yAxis = new THREE.Vector3(0, 1, 0);
+    //   this.iss.rotateOnAxis(xAxis, Math.PI / 2);
+    //   this.iss.rotateOnAxis(yAxis, -Math.PI / 2);
 
-      const issAxis = new THREE.AxesHelper(200);
-      this.iss.add(issAxis);
+    //   const issAxis = new THREE.AxesHelper(200);
+    //   this.iss.add(issAxis);
+    // }
+
+    // retrive this position from geojson
+    // eslint-disable-next-line no-unused-vars
+    const positionsModels = [[9.1900634765625, 45.468799075209894, 200], [12.496948242187498, 41.89001042401827, 200], [14.245319366455076, 40.83667117059108, 200]];
+    if (this.meshs.length > 0) {
+      positionsModels.forEach((coord, index) => {
+        if (this.meshs[index]) {
+          const posEst = [coord[0], coord[1], coord[2]];
+          const currentMesh = this.meshs[index];
+
+          const renderPos = [0, 0, 0];
+          externalRenderers.toRenderCoordinates(window.view, posEst, 0, SpatialReference.WGS84, renderPos, 0, 1);
+          currentMesh.position.set(renderPos[0], renderPos[1], renderPos[2]);
+
+          const transform = new THREE.Matrix4();
+          transform.fromArray(externalRenderers.renderCoordinateTransformAt(window.view, posEst, SpatialReference.WGS84, new Array(16)));
+          transform.decompose(currentMesh.position, currentMesh.quaternion, currentMesh.scale);
+
+          const xAxis = new THREE.Vector3(1, 0, 0);
+          const yAxis = new THREE.Vector3(0, 1, 0);
+          currentMesh.rotateOnAxis(xAxis, Math.PI / 2);
+          currentMesh.rotateOnAxis(yAxis, -Math.PI / 2);
+
+          // const issAxis = new THREE.AxesHelper(200);
+          // currentMesh.add(issAxis);
+        }
+      });
     }
 
     // draw the scene
