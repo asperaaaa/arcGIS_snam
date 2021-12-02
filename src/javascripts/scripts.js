@@ -23,8 +23,8 @@ let isZommed = false;
 // const mesh = './assets/models/iss.obj';
 // const mesh = './assets/models/snam.ifc';
 // const mesh = './assets/models/test.ifc';
-const meshs = ['./assets/models/source/SNM_POC_CON_V04.ifc', './assets/models/source/SNM_POC_PIL1_V03.ifc', './assets/models/source/SNM_POC_PIL2_V01.ifc'];
-// const meshs = ['./assets/models/source/SNM_POC_PIL2_V02-All_Building_Proxy_02.ifc', './assets/models/source/SNM_POC_PIL2_V02-All_Building_Proxy.ifc', './assets/models/source/SNM_POC_PIL2_V02-categorie_differenziate.ifc'];
+// const meshs = ['./assets/models/source/SNM_POC_ReMiCusago_V03.ifc', './assets/models/source/SNM_POC_PIL1_V03.ifc', './assets/models/source/SNM_POC_PIL2_V01.ifc'];
+const meshs = ['./assets/models/source/SNM_POC_PIL2_V02-All_Building_Proxy_02.ifc', './assets/models/source/SNM_POC_PIL2_V02-All_Building_Proxy.ifc', './assets/models/source/SNM_POC_PIL2_V02-categorie_differenziate.ifc'];
 // const meshs = ['./assets/models/source/SNM_POC_PIL2_V02.ifc', './assets/models/source/SNM_POC_PIL2_V03.ifc', './assets/models/source/SNM_POC_PIL3_V03.ifc'];
 // const meshs = ['./assets/models/source/SNM_POC_PIL2_V02.ifc', './assets/models/source/SNM_POC_PIL2_V03.ifc', './assets/models/source/SNM_POC_ReMiCusago_V03.ifc'];
 // const meshs = ['./assets/models/snam.ifc', './assets/models/source/SNM_POC_PIL2_V03.ifc', './assets/models/source/SNM_POC_ReMiCusago_V03.ifc'];
@@ -43,6 +43,7 @@ const renderer = {
 const geojsonLayer = new GeoJSONLayer({
   url,
   renderer,
+  maxScale: 1500,
 });
 
 const map = new WebMap({
@@ -292,7 +293,7 @@ const issExternalRenderer = {
 
     // retrive this position from geojson
     // eslint-disable-next-line no-unused-vars
-    const positionsModels = [[9.1900634765625, 45.468799075209894, 200], [12.496948242187498, 41.89001042401827, 200], [14.245319366455076, 40.83667117059108, 200]];
+    const positionsModels = [[9.1900634765625, 45.468799075209894, 130], [12.496948242187498, 41.89001042401827, 50], [14.245319366455076, 40.83667117059108, 40]];
     if (this.meshs.length > 0) {
       positionsModels.forEach((coord, index) => {
         if (this.meshs[index]) {
