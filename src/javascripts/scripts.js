@@ -20,14 +20,9 @@ esriConfig.apiKey = 'AAPK458453f872f04d9883da057b3cf03fd9MtYiqYcCKy61WkYFI1ySlxP
 const url = './assets/cities.geojson';
 const buttonBack = document.querySelector('.back');
 let isZommed = false;
-// const mesh = './assets/models/iss.obj';
 // const mesh = './assets/models/snam.ifc';
 // const mesh = './assets/models/test.ifc';
-// const meshs = ['./assets/models/source/SNM_POC_ReMiCusago_V03.ifc', './assets/models/source/SNM_POC_PIL1_V03.ifc', './assets/models/source/SNM_POC_PIL2_V01.ifc'];
-const meshs = ['./assets/models/source/SNM_POC_PIL2_V02-All_Building_Proxy_02.ifc', './assets/models/source/SNM_POC_PIL2_V02-All_Building_Proxy.ifc', './assets/models/source/SNM_POC_PIL2_V02-categorie_differenziate.ifc'];
-// const meshs = ['./assets/models/source/SNM_POC_PIL2_V02.ifc', './assets/models/source/SNM_POC_PIL2_V03.ifc', './assets/models/source/SNM_POC_PIL3_V03.ifc'];
-// const meshs = ['./assets/models/source/SNM_POC_PIL2_V02.ifc', './assets/models/source/SNM_POC_PIL2_V03.ifc', './assets/models/source/SNM_POC_ReMiCusago_V03.ifc'];
-// const meshs = ['./assets/models/snam.ifc', './assets/models/source/SNM_POC_PIL2_V03.ifc', './assets/models/source/SNM_POC_ReMiCusago_V03.ifc'];
+const meshs = ['./assets/models/test.ifc', './assets/models/test.ifc', './assets/models/test.ifc'];
 
 const renderer = {
   type: 'simple',
