@@ -17,7 +17,7 @@ esriConfig.apiKey = 'AAPK458453f872f04d9883da057b3cf03fd9MtYiqYcCKy61WkYFI1ySlxP
 const url = './assets/cities.geojson';
 const buttonBack = document.querySelector('.back');
 let isZommed = false;
-const meshs = ['./assets/models/test.ifc', './assets/models/test.ifc', './assets/models/test.ifc'];
+const meshs = ['./assets/models/test.ifc'];
 
 const renderer = {
   type: 'simple',
@@ -148,7 +148,7 @@ window.view.environment.lighting.cameraTrackingEnabled = false;
 // Create our custom external renderer
 // ////////////////////////////////////////////////////////////////////////////////////
 
-const issExternalRenderer = {
+const externalRenderer = {
   renderer: null, // three.js renderer
   camera: null, // three.js camera
   scene: null, // three.js scene
@@ -156,9 +156,7 @@ const issExternalRenderer = {
   ambient: null, // three.js ambient light source
   sun: null, // three.js sun light source
 
-  iss: null, // ISS model
-  issScale: 200, // scale for the iss model
-  issMaterial: new THREE.MeshLambertMaterial({ color: 0x707070 }), // material for the ISS model
+  meshScale: 2000, // scale for the iss model
 
   meshs: [],
 
@@ -213,7 +211,7 @@ const issExternalRenderer = {
     ifcLoader.ifcManager.setWasmPath('./assets/ifc/');
     meshs.forEach((_url) => {
         ifcLoader.load(_url, (object3d) => {
-          object3d.scale.set(this.issScale, this.issScale, this.issScale);
+          // object3d.scale.set(this.meshScale, this.meshScale, this.mashScale);
           this.meshs.push(object3d);
           this.scene.add(object3d);
       }, onProgress, (error) => {
@@ -236,7 +234,7 @@ const issExternalRenderer = {
 
     // retrive this position from geojson
     // eslint-disable-next-line no-unused-vars
-    const positionsModels = [[9.1900634765625, 45.468799075209894, 130], [12.496948242187498, 41.89001042401827, 50], [14.245319366455076, 40.83667117059108, 40]];
+    const positionsModels = [[9.024196, 45.436683, 130], [12.496948242187498, 41.89001042401827, 50], [14.245319366455076, 40.83667117059108, 40]];
     if (this.meshs.length > 0) {
       positionsModels.forEach((coord, index) => {
         if (this.meshs[index]) {
@@ -267,4 +265,4 @@ const issExternalRenderer = {
 };
 
 // register the external renderer
-externalRenderers.add(window.view, issExternalRenderer);
+externalRenderers.add(window.view, externalRenderer);
